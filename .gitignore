@@ -1,0 +1,13 @@
+/first-api
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+
+# Ignore environment variables!
+.env

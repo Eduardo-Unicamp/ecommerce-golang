@@ -39,6 +39,9 @@ func main() {
 
 	log.Println("API rodando em http://localhost:8080")
 	log.Println("GET    /client      -> listar clientes")
+	log.Println("POST	/client	->adicionar cliente")
+	log.Println("DELETE	/client	->deletar cliente")
+	log.Println("PUT	/client	->modificar cliente")
 
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatalf("Erro ao iniciar o servidor: %s", err)

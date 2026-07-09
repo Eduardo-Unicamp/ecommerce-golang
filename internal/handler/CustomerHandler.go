@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -8,10 +9,10 @@ import (
 )
 
 type CustomerUseCase interface {
-	GetCustomers() ([]model.Customer, error)
-	CreateCustomer(*http.Request) (*model.Customer, error)
-	UpdateCustomer(*http.Request) (*model.Customer, error)
-	DeleteCustomer(*http.Request) error
+	GetCustomers(context.Context) ([]model.Customer, error)
+	CreateCustomer(context.Context, *http.Request) (*model.Customer, error)
+	UpdateCustomer(context.Context, *http.Request) (*model.Customer, error)
+	DeleteCustomer(context.Context, *http.Request) error
 }
 
 type CustomerHandler struct {
@@ -23,7 +24,8 @@ func NewCustomerHandler(useCase CustomerUseCase) *CustomerHandler {
 }
 
 func (c *CustomerHandler) GetCustomers(w http.ResponseWriter, r *http.Request) {
-	customers, err := c.useCase.GetCustomers()
+	ctx := r.Context()
+	customers, err := c.useCase.GetCustomers(ctx)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -39,7 +41,8 @@ func (c *CustomerHandler) GetCustomers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *CustomerHandler) CreateCustomer(w http.ResponseWriter, r *http.Request) {
-	customer, err := c.useCase.CreateCustomer(r)
+	ctx := r.Context()
+	customer, err := c.useCase.CreateCustomer(ctx, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
@@ -51,7 +54,8 @@ func (c *CustomerHandler) CreateCustomer(w http.ResponseWriter, r *http.Request)
 }
 
 func (c *CustomerHandler) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
-	customer, err := c.useCase.UpdateCustomer(r)
+	ctx := r.Context()
+	customer, err := c.useCase.UpdateCustomer(ctx, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
@@ -62,7 +66,8 @@ func (c *CustomerHandler) UpdateCustomer(w http.ResponseWriter, r *http.Request)
 }
 
 func (c *CustomerHandler) DeleteCustomer(w http.ResponseWriter, r *http.Request) {
-	err := c.useCase.DeleteCustomer(r)
+	ctx := r.Context()
+	err := c.useCase.DeleteCustomer(ctx, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}

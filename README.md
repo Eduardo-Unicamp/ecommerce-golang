@@ -13,13 +13,6 @@ For more detailed specifications, check the requirements doc here: [Challenge Do
 *   **Docker**
 *   **Migrations**
 
-## Some relevant libraries used
-
-*   `chi`
-*   `bcrypt`
-*   `godotenv`
-*   `google/uuid`
-
 ## Endpoints
 
 ### Customers

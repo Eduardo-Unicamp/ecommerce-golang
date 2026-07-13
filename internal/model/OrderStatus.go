@@ -1,6 +1,9 @@
 package model
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type OrderStatus int
 
@@ -49,4 +52,9 @@ func (os *OrderStatus) Scan(src any) error {
 	}
 
 	return nil
+}
+
+// pra sair como texto no json
+func (os OrderStatus) MarshalJSON() ([]byte, error) {
+	return json.Marshal(os.String())
 }

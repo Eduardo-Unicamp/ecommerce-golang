@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"first-api/internal/model"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -28,7 +29,10 @@ VALUES ($1,$2,$3);
 `
 
 	if _, err := transaction.Exec(ctx, query, newOrder.ID, newOrder.Status, newOrder.CustomerID); err != nil {
-		return &model.Order{}, err
+		if strings.Contains(err.Error(), "SQLSTATE 23503") {
+			return nil, model.CustomerNotFound
+		}
+		return nil, err
 	}
 
 	for _, item := range newOrder.Items {

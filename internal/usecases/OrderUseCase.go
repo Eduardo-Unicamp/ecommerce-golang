@@ -119,7 +119,7 @@ func (ou *OrderUseCase) CancelOrder(ctx context.Context, r *http.Request) error 
 	if order.Status != model.PENDING {
 		return model.ErrUnableToCancel
 	}
-
+	order.Cancel()
 	if err := ou.orderRepository.CancelOrder(ctx, order); err != nil {
 		return err
 	}

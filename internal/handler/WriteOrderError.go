@@ -31,8 +31,10 @@ func WriteOrderError(w http.ResponseWriter, err error) {
 	case errors.Is(err, sql.ErrNoRows) || errors.Is(err, model.CustomerNotFound) || errors.Is(err, model.ErrOrderNotFound):
 		http.Error(w, err.Error(), http.StatusNotFound)
 
-	case errors.Is(err, model.ErrInvalidPassword):
+	case errors.Is(err, model.ErrInvalidPassword) || errors.Is(err, model.ErrReadingJSON):
 		http.Error(w, err.Error(), http.StatusBadRequest)
+	case errors.Is(err, model.ErrInvalidRefreshToken) || errors.Is(err, model.ErrRefreshTokenRequired):
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 
 	default:
 		log.Print(err)

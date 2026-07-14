@@ -8,6 +8,7 @@ import (
 	"first-api/internal/model" // Importe seu repositório de clientes
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -17,6 +18,10 @@ type CustomerAuthRepository interface {
 	GetCustomers(context.Context) ([]model.Customer, error)
 	CreateCustomer(context.Context, *model.Customer) error
 	GetCustomerByField(context.Context, string, string) (*model.Customer, error)
+
+	SaveRefreshToken(context.Context, *model.RefreshToken) error
+	GetRefreshToken(context.Context, string) (*model.RefreshToken, error)
+	RevokeRefreshToken(context.Context, string) error
 }
 
 type AuthUseCase struct {
@@ -54,7 +59,7 @@ func (au *AuthUseCase) Register(ctx context.Context, r *http.Request) (*model.To
 		return nil, err
 	}
 
-	return au.GenerateTokenResponse(customer.ID)
+	return au.GenerateTokenResponse(ctx, customer.ID)
 
 }
 
@@ -75,18 +80,62 @@ func (au *AuthUseCase) Login(ctx context.Context, r *http.Request) (*model.Token
 		return nil, model.ErrInvalidPassword
 	}
 
-	return au.GenerateTokenResponse(customer.ID)
+	return au.GenerateTokenResponse(ctx, customer.ID)
 }
 
-func (au *AuthUseCase) GenerateTokenResponse(customerID uuid.UUID) (*model.TokenResponseDTO, error) {
-	tokenStr, err := auth.GenerateToken(customerID, au.jwtConfig)
+func (au *AuthUseCase) GenerateTokenResponse(ctx context.Context, customerID uuid.UUID) (*model.TokenResponseDTO, error) {
+	accessTokenStr, err := auth.GenerateToken(customerID, au.jwtConfig)
 	if err != nil {
 		return nil, err
 	}
 
+	refreshTokenStr, err := auth.GenerateRefreshToken()
+	if err != nil {
+		return nil, err
+	}
+
+	//pra ser salvo no banco
+	refreshToken := model.RefreshToken{
+		Token:      refreshTokenStr,
+		CustomerID: customerID,
+		ExpiresAt:  time.Now().Add(time.Hour * 24 * time.Duration(au.jwtConfig.RefreshExpirationDays)),
+	}
+	if err := au.CustomerRepo.SaveRefreshToken(ctx, &refreshToken); err != nil {
+		return nil, err
+	}
+
+	//devolvido pro user
 	return &model.TokenResponseDTO{
-		AccessToken: tokenStr,
-		ExpiresIn:   au.jwtConfig.ExpirationMinutes * 60,
-		CustomerID:  customerID,
+		AccessToken:  accessTokenStr,
+		RefreshToken: refreshTokenStr,
+		ExpiresIn:    au.jwtConfig.ExpirationMinutes * 60,
+		CustomerID:   customerID,
 	}, nil
+}
+
+func (au *AuthUseCase) RefreshAccessToken(ctx context.Context, r *http.Request) (*model.TokenResponseDTO, error) {
+	var request model.RefreshTokenDTO
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	if request.RefreshToken == "" {
+		return nil, model.ErrRefreshTokenRequired
+	}
+
+	refreshToken, err := au.CustomerRepo.GetRefreshToken(ctx, request.RefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	//checa se o token está revogado ou expirado
+	if refreshToken.Revoked == true || time.Now().After(refreshToken.ExpiresAt) {
+		return nil, model.ErrInvalidRefreshToken
+	}
+
+	//revoga o token antigo e gera um outro a cada vez que o user gera um novo access token(refresh token rotation) por segurança
+	if err = au.CustomerRepo.RevokeRefreshToken(ctx, refreshToken.Token); err != nil {
+		return nil, err
+	}
+	return au.GenerateTokenResponse(ctx, refreshToken.CustomerID)
+
 }

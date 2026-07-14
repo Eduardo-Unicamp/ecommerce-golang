@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"os"
 	"strconv"
@@ -16,8 +18,9 @@ var (
 )
 
 type JWTConfig struct {
-	Secret            []byte
-	ExpirationMinutes int
+	Secret                []byte
+	ExpirationMinutes     int
+	RefreshExpirationDays int
 }
 
 func LoadJWTConfig() (*JWTConfig, error) {
@@ -34,10 +37,15 @@ func LoadJWTConfig() (*JWTConfig, error) {
 	if err != nil {
 		return nil, errors.New("Invalid format for token expiration environment variable")
 	}
+	refreshExpiration, err := strconv.Atoi(os.Getenv("REFRESH_EXPIRATION_DAYS"))
+	if err != nil {
+		return nil, errors.New("Invalid format for refresher token expiration value")
+	}
 
 	return &JWTConfig{
-		Secret:            []byte(secret),
-		ExpirationMinutes: expirationMinutes,
+		Secret:                []byte(secret),
+		ExpirationMinutes:     expirationMinutes,
+		RefreshExpirationDays: refreshExpiration,
 	}, nil
 }
 
@@ -71,4 +79,12 @@ func ValidateToken(tokenStr string, config *JWTConfig) (*jwt.RegisteredClaims, e
 	}
 
 	return claims, nil
+}
+
+func GenerateRefreshToken() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
 }

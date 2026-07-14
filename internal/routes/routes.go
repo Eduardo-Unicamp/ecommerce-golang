@@ -11,6 +11,7 @@ import (
 func AuthRoutes(r *chi.Mux, handler *handler.AuthHandler) {
 	r.Post("/register", handler.Register)
 	r.Post("/login", handler.Login)
+	r.Post("/refresh", handler.Refresh)
 }
 
 func CustomerRoutes(r *chi.Mux, handler *handler.CustomerHandler, jwtConfig *auth.JWTConfig) {

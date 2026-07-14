@@ -137,3 +137,35 @@ func (cr *CustomerRepository) GetCustomerByField(ctx context.Context, field stri
 
 	return &customer, err
 }
+
+func (cu *CustomerRepository) SaveRefreshToken(ctx context.Context, token *model.RefreshToken) error {
+	query := "INSERT INTO refresh_tokens (token,customer_id,expires_at,revoked) VALUES ($1,$2,$3,$4)"
+	_, err := cu.connection.Exec(ctx, query, token.Token, token.CustomerID, token.ExpiresAt, token.Revoked)
+
+	return err
+}
+
+func (cu *CustomerRepository) GetRefreshToken(ctx context.Context, tokenStr string) (*model.RefreshToken, error) {
+	var refreshToken model.RefreshToken
+
+	query := "SELECT token, customer_id,expires_at,revoked FROM refresh_tokens WHERE token=$1"
+
+	if err := cu.connection.QueryRow(ctx, query, tokenStr).Scan(&refreshToken.Token, &refreshToken.CustomerID, &refreshToken.ExpiresAt, &refreshToken.Revoked); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, model.ErrInvalidRefreshToken
+		}
+		return nil, err
+	}
+
+	return &refreshToken, nil
+
+}
+
+func (cu *CustomerRepository) RevokeRefreshToken(ctx context.Context, tokenStr string) error {
+	query := "UPDATE refresh_tokens SET revoked=TRUE WHERE token=$1"
+	if _, err := cu.connection.Exec(ctx, query, tokenStr); err != nil {
+		return err
+	}
+
+	return nil
+}

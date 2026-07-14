@@ -42,3 +42,6 @@ var ErrUnableToPay = errors.New("Only PENDING orders can be canceled!")
 var ErrInvalidPassword = errors.New("Invalid password(must be between 6 and 20 characters)")
 
 var ErrReadingJSON = errors.New("Error while reading the json")
+
+var ErrInvalidRefreshToken = errors.New("Invalid refresh token")
+var ErrRefreshTokenRequired = errors.New("Refresh token required")

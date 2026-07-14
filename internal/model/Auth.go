@@ -1,6 +1,10 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type LoginDTO struct {
 	Email    string `json:"email"`
@@ -15,7 +19,19 @@ type RegisterDTO struct {
 }
 
 type TokenResponseDTO struct {
-	AccessToken string    `json:"access_token"`
-	ExpiresIn   int       `json:"expires_in"`
-	CustomerID  uuid.UUID `json:"customer_id"`
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token"`
+	ExpiresIn    int       `json:"expires_in"`
+	CustomerID   uuid.UUID `json:"customer_id"`
+}
+
+type RefreshTokenDTO struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type RefreshToken struct {
+	Token      string    `json:"token"`
+	CustomerID uuid.UUID `json:"customer_id"`
+	ExpiresAt  time.Time `json:"expires_at"`
+	Revoked    bool      `json:"revoked"`
 }

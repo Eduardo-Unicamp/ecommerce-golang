@@ -6,6 +6,12 @@ Based mainly on `net/http` and `chi`, it also includes `pgxpool` for connecting 
 
 For more detailed specifications, check the requirements doc here: [Challenge Document](challenge.md)
 
+## Main Features
+* **Create,see, pay and cancel orders adopting the current product price and with automated stock management**
+* **Manage customers and products**
+* * **Authentication with JWT access token and refresh token**
+* * **Persistence with postgreSQL(with pgxpool and migrate) and Docker containerization**
+
 ## Stack
 
 *   **Golang**

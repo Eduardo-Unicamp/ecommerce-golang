@@ -1,6 +1,6 @@
 # Ecommerce API
 
-Ecommerce API developed in Golang responsable for managing customers, products and orders, allowing a wide set of actions such as fetching, creating, deleting, paying and cancelling customer orders, managing product stocks, prices and customer data.
+Ecommerce API developed in Golang responsable for managing customers, products and orders, allowing a wide set of actions such as log in, fetching, creating, deleting, paying and cancelling customer orders, managing product stocks, prices and customer data.
 
 Based mainly on `net/http` and `chi`, it also includes `pgxpool` for connecting to Postgres, `godotenv` for dealing with environment variables, `bcrypt` for password hashing, among many other libraries.
 
@@ -12,6 +12,7 @@ For more detailed specifications, check the requirements doc here: [Challenge Do
 *   **PostgreSQL** (integrated using `pgx`)
 *   **Docker**
 *   **Migrations**
+*   **JWT authentication**
 
 ## Endpoints
 

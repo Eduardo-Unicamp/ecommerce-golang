@@ -9,8 +9,8 @@ For more detailed specifications, check the requirements doc here: [Challenge Do
 ## Main Features
 * **Create,see, pay and cancel orders adopting the current product price and with automated stock management**
 * **Manage customers and products**
-* * **Authentication with JWT access token and refresh token**
-* * **Persistence with postgreSQL(with pgxpool and migrate) and Docker containerization**
+* **Authentication with JWT access token and refresh token**
+* **Persistence with postgreSQL(with pgxpool and migrate) and Docker containerization**
 
 ## Stack
 
@@ -18,7 +18,7 @@ For more detailed specifications, check the requirements doc here: [Challenge Do
 *   **PostgreSQL** (integrated using `pgx`)
 *   **Docker**
 *   **Migrations**
-*   **JWT authentication**
+
 
 ## Endpoints
 

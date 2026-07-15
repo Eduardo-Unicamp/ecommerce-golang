@@ -50,6 +50,39 @@ func NewCustomer(name string, email string, phone string, password string) (*Cus
 	return &customer, nil
 }
 
+func NewCustomerThroughSocial(name string, email string) (*Customer, error) {
+	name, email = strings.TrimSpace(name), strings.TrimSpace(email)
+	if name == "" {
+		return &Customer{}, ErrNameRequired
+	}
+	if email == "" {
+		return &Customer{}, ErrEmailRequired
+	}
+
+	customerID, err := uuid.NewV7()
+	if err != nil {
+		return nil, err
+	}
+	//gera uma password pro banco que nao será usada pelo user
+	randomPassword, err := uuid.NewV7()
+	if err != nil {
+		return nil, err
+	}
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(randomPassword.String()), 14)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Customer{
+		ID:       customerID,
+		Name:     name,
+		Email:    email,
+		Phone:    "",
+		Password: string(passwordHash),
+	}, nil
+
+}
+
 type CreateCustomerRequest struct {
 	ID       uuid.UUID `json:"id"`
 	Name     string    `json:"name"`

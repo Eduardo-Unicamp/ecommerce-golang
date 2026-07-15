@@ -33,7 +33,7 @@ func WriteOrderError(w http.ResponseWriter, err error) {
 
 	case errors.Is(err, model.ErrInvalidPassword) || errors.Is(err, model.ErrReadingJSON):
 		http.Error(w, err.Error(), http.StatusBadRequest)
-	case errors.Is(err, model.ErrInvalidRefreshToken) || errors.Is(err, model.ErrRefreshTokenRequired):
+	case errors.Is(err, model.ErrInvalidRefreshToken) || errors.Is(err, model.ErrRefreshTokenRequired) || errors.Is(err, model.ErrAuthorizationFailed):
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 
 	default:

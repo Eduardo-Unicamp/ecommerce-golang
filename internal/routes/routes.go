@@ -12,6 +12,10 @@ func AuthRoutes(r *chi.Mux, handler *handler.AuthHandler) {
 	r.Post("/register", handler.Register)
 	r.Post("/login", handler.Login)
 	r.Post("/refresh", handler.Refresh)
+
+	//OAUTH2
+	r.Get("/auth/{provider}", handler.BeginOAuth)
+	r.Get("/auth/{provider}/callback", handler.CallbackOAuth)
 }
 
 func CustomerRoutes(r *chi.Mux, handler *handler.CustomerHandler, jwtConfig *auth.JWTConfig) {

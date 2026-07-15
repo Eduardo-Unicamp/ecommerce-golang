@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/markbates/goth"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -150,5 +151,30 @@ func (au *AuthUseCase) RefreshAccessToken(ctx context.Context, r *http.Request) 
 		return nil, err
 	}
 	return au.GenerateTokenResponse(ctx, refreshToken.CustomerID)
+
+}
+
+func (au AuthUseCase) SocialLogin(ctx context.Context, gothUser goth.User) (*model.TokenResponseDTO, error) {
+	customer, err := au.CustomerRepo.GetCustomerByField(ctx, "email", gothUser.Email)
+	if err != nil {
+		//se o usuarion nao existe cria conta
+		if errors.Is(err, model.CustomerNotFound) {
+			name := gothUser.Name
+			if name == "" {
+				name = gothUser.NickName
+			}
+			//cria objeto do novo usuario
+			customer, err := model.NewCustomerThroughSocial(name, gothUser.Email)
+			if err != nil {
+				return nil, err
+			}
+			//adiciona no banco
+			if err := au.CustomerRepo.CreateCustomer(ctx, customer); err != nil {
+				return nil, err
+			}
+
+		}
+	}
+	return au.GenerateTokenResponse(ctx, customer.ID)
 
 }

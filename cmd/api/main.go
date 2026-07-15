@@ -35,6 +35,11 @@ func main() {
 		log.Fatalf("Erro ao carregar JWTConfig:%s", err.Error())
 	}
 
+	//inicializa configurações do oauth
+	if err := auth.NewOAuth(); err != nil {
+		log.Fatalf("Erro carregar as configurações do OAUTH: %s", err)
+	}
+
 	CustomerRepository := repository.NewCustomerRepository(dbPool)
 	CustomerUseCase := usecases.NewCustomerUseCase(CustomerRepository)
 	CustomerHandler := handler.NewCustomerHandler(CustomerUseCase)
@@ -59,22 +64,6 @@ func main() {
 	routes.AuthRoutes(r, AuthHandler)
 
 	log.Println("API rodando em http://localhost:8080")
-	log.Println("---------------------------------------------------------------")
-	log.Println("GET	/order/all/{customer_id}?limit=limit&offset=offset -> listar pedidos de um cliente")
-	log.Println("POST	/order -> adicionar pedido")
-	log.Println("POST	/order/cancel/{order_id} -> cancelar pedido")
-	log.Println("POST	/order/pay/{order_id} -> pagar pedido")
-	log.Println("DELETE	/order/{order_id} -> deletar pedido")
-	log.Println("---------------------------------------------------------------")
-	log.Println("GET	/customer -> listar clientes")
-	log.Println("POST	/customer/ -> adicionar cliente")
-	log.Println("DELETE	/customer/{customer_id} -> deletar cliente")
-	log.Println("PUT	/client/{customer_id} ->modificar cliente")
-	log.Println("---------------------------------------------------------------")
-	log.Println("GET	/product -> listar produtos")
-	log.Println("POST	/product/ -> adicionar produto")
-	log.Println("DELETE	/product/{product_id} -> deletar produto")
-	log.Println("PUT	/product/{product_id} -> modificar produto")
 
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatalf("Erro ao iniciar o servidor: %s", err)

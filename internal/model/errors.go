@@ -45,3 +45,5 @@ var ErrReadingJSON = errors.New("Error while reading the json")
 
 var ErrInvalidRefreshToken = errors.New("Invalid refresh token")
 var ErrRefreshTokenRequired = errors.New("Refresh token required")
+
+var ErrAuthorizationFailed = errors.New("Oauth authorization failed")

@@ -48,4 +48,4 @@ var ErrRefreshTokenRequired = errors.New("Refresh token required")
 
 var ErrAuthorizationFailed = errors.New("Oauth authorization failed")
 
-var InvalidIDFormat = errors.New("O UUID informado não apresenta formato válido")
+var ErrInvalidIDFormat = errors.New("O UUID informado não apresenta formato válido")

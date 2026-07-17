@@ -34,3 +34,11 @@ func RequireAuth(jwtConfig *auth.JWTConfig) func(http.Handler) http.Handler {
 		})
 	}
 }
+
+func GetUserIDFromToken(ctx context.Context) string {
+
+	if id, ok := ctx.Value(UserIDKey).(string); ok {
+		return id
+	}
+	return ""
+}

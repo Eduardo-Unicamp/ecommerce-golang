@@ -179,7 +179,7 @@ func (or *OrderRepository) GetOrders(ctx context.Context, limit int, offset int,
 
 }
 
-func (or *OrderRepository) GetOrderByID(ctx context.Context, orderID string) (*model.Order, error) {
+func (or *OrderRepository) GetOrderByID(ctx context.Context, orderID string, customerID string) (*model.Order, error) {
 	var newOrder model.Order
 
 	tx, err := or.connection.Begin(ctx)
@@ -187,8 +187,16 @@ func (or *OrderRepository) GetOrderByID(ctx context.Context, orderID string) (*m
 		return &model.Order{}, err
 	}
 	defer tx.Rollback(ctx)
-	//add items primeiro
-	query := `SELECT id,selling_price,units,product_id FROM order_items WHERE order_id=$1`
+
+	//add order
+	query := `SELECT * FROM orders WHERE id=$1 AND customer_id=$2;`
+	row := tx.QueryRow(ctx, query, orderID, customerID)
+	if err := row.Scan(&newOrder.ID, &newOrder.Status, &newOrder.CustomerID); err != nil {
+		return nil, err
+	}
+
+	//add items
+	query = `SELECT id,selling_price,units,product_id FROM order_items WHERE order_id=$1`
 	rows, err := tx.Query(ctx, query, orderID)
 
 	for rows.Next() {
@@ -205,13 +213,6 @@ func (or *OrderRepository) GetOrderByID(ctx context.Context, orderID string) (*m
 		}
 
 		newOrder.Items = append(newOrder.Items, newItem)
-	}
-
-	//add order
-	query = `SELECT * FROM orders WHERE id=$1;`
-	row := tx.QueryRow(ctx, query, orderID)
-	if err := row.Scan(&newOrder.ID, &newOrder.Status, &newOrder.CustomerID); err != nil {
-		return nil, err
 	}
 
 	err = tx.Commit(ctx)

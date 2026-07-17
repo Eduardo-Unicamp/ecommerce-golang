@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"first-api/internal/middleware"
 	"first-api/internal/model"
 	"net/http"
 	"strconv"
@@ -16,7 +17,7 @@ import (
 type OrderRepository interface {
 	CreateOrder(context.Context, *model.Order) (*model.Order, error)
 	GetOrders(context.Context, int, int, string) (*[]model.Order, error)
-	GetOrderByID(context.Context, string) (*model.Order, error)
+	GetOrderByID(context.Context, string, string) (*model.Order, error)
 	UpdateOrderStatus(context.Context, *model.Order) error
 	CancelOrder(context.Context, *model.Order) error
 }
@@ -40,10 +41,18 @@ func (ou *OrderUseCase) CreateOrder(ctx context.Context, r *http.Request) (*mode
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return &model.Order{}, err
 	}
+	//getting uuid string from token and parsing to UUID
+	customerID := middleware.GetUserIDFromToken(ctx)
+	parsedCustomerID, err := uuid.Parse(customerID)
+	if err != nil {
+		return nil, model.ErrInvalidIDFormat
+	}
 
+	//get product info
 	productInfo, err := ou.pr.GetProductInfo(ctx, request.Items)
 
-	newOrder, err := model.NewOrder(request.CustomerID, request.Items, productInfo)
+	//create new order
+	newOrder, err := model.NewOrder(parsedCustomerID, request.Items, productInfo)
 
 	if err != nil {
 		return newOrder, err
@@ -57,19 +66,24 @@ func (ou *OrderUseCase) CreateOrder(ctx context.Context, r *http.Request) (*mode
 
 func (ou *OrderUseCase) GetOrders(ctx context.Context, r *http.Request) (*[]model.Order, error) {
 	limit, offset := extractLimitAndOffset(r)
-	customerID := chi.URLParam(r, "customer_id")
+	customerID := middleware.GetUserIDFromToken(ctx)
+
 	return ou.orderRepository.GetOrders(ctx, limit, offset, customerID)
 
 }
 
 func (ou *OrderUseCase) GetOrderByID(ctx context.Context, r *http.Request) (*model.Order, error) {
 	orderId := chi.URLParam(r, "order_id")
+	customerID := middleware.GetUserIDFromToken(ctx) //user autenticado
+	if customerID == "" {
+		return nil, model.ErrAuthorizationFailed
+	}
 
 	if err := uuid.Validate(orderId); err != nil {
 		return nil, err
 	}
 
-	order, err := ou.orderRepository.GetOrderByID(ctx, orderId)
+	order, err := ou.orderRepository.GetOrderByID(ctx, orderId, customerID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, model.ErrOrderNotFound
@@ -103,7 +117,10 @@ func extractLimitAndOffset(r *http.Request) (int, int) {
 
 func (ou *OrderUseCase) PayOrder(ctx context.Context, r *http.Request) error {
 	orderID := chi.URLParam(r, "order_id")
-	order, err := ou.orderRepository.GetOrderByID(ctx, orderID)
+	customerID := middleware.GetUserIDFromToken(ctx)
+
+	order, err := ou.orderRepository.GetOrderByID(ctx, orderID, customerID)
+
 	if err != nil {
 		return err
 	}
@@ -119,7 +136,8 @@ func (ou *OrderUseCase) PayOrder(ctx context.Context, r *http.Request) error {
 
 func (ou *OrderUseCase) CancelOrder(ctx context.Context, r *http.Request) error {
 	orderID := chi.URLParam(r, "order_id")
-	order, err := ou.orderRepository.GetOrderByID(ctx, orderID)
+	customerID := middleware.GetUserIDFromToken(ctx)
+	order, err := ou.orderRepository.GetOrderByID(ctx, orderID, customerID)
 	if err != nil {
 		return err
 	}

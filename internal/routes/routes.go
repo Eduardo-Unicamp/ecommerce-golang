@@ -47,7 +47,7 @@ func OrderRoutes(r *chi.Mux, handler *handler.OrderHandler, jwtConfig *auth.JWTC
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RequireAuth(jwtConfig))
 
-		r.Get("/order/all/{customer_id}", handler.GetOrders)
+		r.Get("/order", handler.GetOrders)
 		r.Get("/order/{order_id}", handler.GetOrderByID)
 		r.Post("/order", handler.CreateOrder)
 		r.Post("/order/cancel/{order_id}", handler.CancelOrder)

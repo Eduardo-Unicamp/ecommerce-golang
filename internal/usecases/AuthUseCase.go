@@ -2,13 +2,9 @@ package usecases
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"first-api/internal/auth"
 	"first-api/internal/model" // Importe seu repositório de clientes
-	"fmt"
-	"log"
-	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -38,12 +34,7 @@ func NewAuthUseCase(cr CustomerAuthRepository, config *auth.JWTConfig) *AuthUseC
 	}
 }
 
-func (au *AuthUseCase) Register(ctx context.Context, r *http.Request) (*model.TokenResponseDTO, error) {
-	var request model.CreateCustomerRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, fmt.Errorf("Error while parsing the json:%w", err)
-	}
-
+func (au *AuthUseCase) Register(ctx context.Context, request *model.CreateCustomerRequest) (*model.TokenResponseDTO, error) {
 	_, err := au.CustomerRepo.GetCustomerByField(ctx, "email", request.Email)
 	if err == nil {
 		return nil, model.ErrEmailTaken
@@ -65,11 +56,7 @@ func (au *AuthUseCase) Register(ctx context.Context, r *http.Request) (*model.To
 
 }
 
-func (au *AuthUseCase) Login(ctx context.Context, r *http.Request) (*model.TokenResponseDTO, error) {
-	var request model.LoginDTO
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, model.ErrReadingJSON
-	}
+func (au *AuthUseCase) Login(ctx context.Context, request *model.LoginDTO) (*model.TokenResponseDTO, error) {
 
 	customer, err := au.CustomerRepo.GetCustomerByField(ctx, "email", request.Email)
 
@@ -78,18 +65,10 @@ func (au *AuthUseCase) Login(ctx context.Context, r *http.Request) (*model.Token
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(customer.Password), []byte(request.Password))
-	//'''''
-	log.Printf("SENHA DO DB (len: %d): '%s'", len(customer.Password), customer.Password)
-	log.Printf("SENHA DO REQ (len: %d): '%s'", len(request.Password), request.Password)
-
-	err = bcrypt.CompareHashAndPassword([]byte(customer.Password), []byte(request.Password))
 
 	if err != nil {
-		// E PRINTE O ERRO REAL DO BCRYPT PARA VER O QUE ELE RECLAMA
-		log.Printf("Erro real do Bcrypt: %v", err)
 		return nil, model.ErrInvalidPassword
 	}
-	//''''''
 	if err != nil {
 		return nil, model.ErrInvalidPassword
 	}
@@ -127,11 +106,8 @@ func (au *AuthUseCase) GenerateTokenResponse(ctx context.Context, customerID uui
 	}, nil
 }
 
-func (au *AuthUseCase) RefreshAccessToken(ctx context.Context, r *http.Request) (*model.TokenResponseDTO, error) {
-	var request model.RefreshTokenDTO
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, err
-	}
+func (au *AuthUseCase) RefreshAccessToken(ctx context.Context, request *model.RefreshTokenDTO) (*model.TokenResponseDTO, error) {
+
 	if request.RefreshToken == "" {
 		return nil, model.ErrRefreshTokenRequired
 	}

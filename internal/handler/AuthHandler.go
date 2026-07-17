@@ -14,9 +14,9 @@ import (
 )
 
 type AuthUseCase interface {
-	Register(context.Context, *http.Request) (*model.TokenResponseDTO, error)
-	Login(context.Context, *http.Request) (*model.TokenResponseDTO, error)
-	RefreshAccessToken(context.Context, *http.Request) (*model.TokenResponseDTO, error)
+	Register(context.Context, *model.CreateCustomerRequest) (*model.TokenResponseDTO, error)
+	Login(context.Context, *model.LoginDTO) (*model.TokenResponseDTO, error)
+	RefreshAccessToken(context.Context, *model.RefreshTokenDTO) (*model.TokenResponseDTO, error)
 	SocialLogin(context.Context, goth.User) (*model.TokenResponseDTO, error)
 }
 
@@ -30,7 +30,12 @@ func NewAuthHandler(authUseCase AuthUseCase) *AuthHandler {
 
 func (ah *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	tokenResponse, err := ah.AuthUseCase.Register(ctx, r)
+	var request model.CreateCustomerRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		WriteOrderError(w, err)
+		return
+	}
+	tokenResponse, err := ah.AuthUseCase.Register(ctx, &request)
 	if err != nil {
 		WriteOrderError(w, err)
 	}
@@ -42,7 +47,14 @@ func (ah *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	tokenResponse, err := ah.AuthUseCase.Login(ctx, r)
+
+	var request model.LoginDTO
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		WriteOrderError(w, err)
+		return
+	}
+
+	tokenResponse, err := ah.AuthUseCase.Login(ctx, &request)
 	if err != nil {
 		WriteOrderError(w, err)
 	}
@@ -54,7 +66,14 @@ func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (ah *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	refreshResponse, err := ah.AuthUseCase.RefreshAccessToken(ctx, r)
+
+	var request model.RefreshTokenDTO
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		WriteOrderError(w, err)
+		return
+	}
+
+	refreshResponse, err := ah.AuthUseCase.RefreshAccessToken(ctx, &request)
 	if err != nil {
 		WriteOrderError(w, err)
 	}

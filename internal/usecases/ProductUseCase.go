@@ -2,11 +2,7 @@ package usecases
 
 import (
 	"context"
-	"encoding/json"
 	"first-api/internal/model"
-	"net/http"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type ProductRepository interface {
@@ -36,20 +32,14 @@ func (pu *ProductUseCase) GetProducts(ctx context.Context) (*[]model.Product, er
 	return products, err
 }
 
-func (pu *ProductUseCase) GetProductByID(ctx context.Context, r *http.Request) (*model.Product, error) {
-	productID := chi.URLParam(r, "product_id")
+func (pu *ProductUseCase) GetProductByID(ctx context.Context, productID string) (*model.Product, error) {
 	product, err := pu.repository.GetProductByID(ctx, productID)
 
 	return product, err
 
 }
 
-func (pu *ProductUseCase) CreateProduct(ctx context.Context, r *http.Request) (*model.Product, error) {
-	var request model.CreateProductRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, err
-	}
-
+func (pu *ProductUseCase) CreateProduct(ctx context.Context, request *model.CreateProductRequest) (*model.Product, error) {
 	product, err := model.NewProduct(request.Name, request.Price, request.Stock)
 	if err != nil {
 		return nil, err
@@ -63,28 +53,20 @@ func (pu *ProductUseCase) CreateProduct(ctx context.Context, r *http.Request) (*
 
 }
 
-func (pu *ProductUseCase) UpdateProduct(ctx context.Context, r *http.Request) (*model.Product, error) {
-	productId := chi.URLParam(r, "product_id")
-	var request model.UpdateProductRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return &model.Product{}, err
-	}
-
+func (pu *ProductUseCase) UpdateProduct(ctx context.Context, productID string, request *model.UpdateProductRequest) (*model.Product, error) {
 	product, err := model.NewProduct(request.Name, request.Price, request.Stock)
 	if err != nil {
 		return product, err
 	}
 
-	err = pu.repository.UpdateProduct(ctx, productId, product)
+	err = pu.repository.UpdateProduct(ctx, productID, product)
 
 	return product, err
 
 }
 
-func (pu *ProductUseCase) DeleteProduct(ctx context.Context, r *http.Request) error {
-	productId := chi.URLParam(r, "product_id")
-	err := pu.repository.DeleteProduct(ctx, productId)
+func (pu *ProductUseCase) DeleteProduct(ctx context.Context, productID string) error {
+	err := pu.repository.DeleteProduct(ctx, productID)
 	if err != nil {
 		return err
 	}

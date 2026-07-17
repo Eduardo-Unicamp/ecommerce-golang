@@ -6,14 +6,16 @@ import (
 	"net/http"
 
 	"first-api/internal/model"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type ProductUseCase interface {
 	GetProducts(context.Context) (*[]model.Product, error)
-	GetProductByID(context.Context, *http.Request) (*model.Product, error)
-	CreateProduct(context.Context, *http.Request) (*model.Product, error)
-	UpdateProduct(context.Context, *http.Request) (*model.Product, error)
-	DeleteProduct(context.Context, *http.Request) error
+	GetProductByID(context.Context, string) (*model.Product, error)
+	CreateProduct(context.Context, *model.CreateProductRequest) (*model.Product, error)
+	UpdateProduct(context.Context, string, *model.UpdateProductRequest) (*model.Product, error)
+	DeleteProduct(context.Context, string) error
 }
 
 type ProductHandler struct {
@@ -43,7 +45,8 @@ func (p *ProductHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 
 func (p *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	product, err := p.UseCase.GetProductByID(ctx, r)
+	productID := chi.URLParam(r, "product_id")
+	product, err := p.UseCase.GetProductByID(ctx, productID)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -60,7 +63,13 @@ func (p *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 
 func (p *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	product, err := p.UseCase.CreateProduct(ctx, r)
+	var request model.CreateProductRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		WriteOrderError(w, err)
+		return
+	}
+
+	product, err := p.UseCase.CreateProduct(ctx, &request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
@@ -73,7 +82,14 @@ func (p *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 func (p *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	product, err := p.UseCase.UpdateProduct(ctx, r)
+	productID := chi.URLParam(r, "product_id")
+	var request model.UpdateProductRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		WriteOrderError(w, err)
+		return
+	}
+	product, err := p.UseCase.UpdateProduct(ctx, productID, &request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
@@ -85,7 +101,8 @@ func (p *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 func (p *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	err := p.UseCase.DeleteProduct(ctx, r)
+	productID := chi.URLParam(r, "product_id")
+	err := p.UseCase.DeleteProduct(ctx, productID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}

@@ -3,14 +3,10 @@ package usecases
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"first-api/internal/middleware"
 	"first-api/internal/model"
-	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -35,12 +31,8 @@ func NewOrderUseCase(orderRepository OrderRepository, pr ProductRepositoryForOrd
 	return &OrderUseCase{orderRepository: orderRepository, pr: pr}
 }
 
-func (ou *OrderUseCase) CreateOrder(ctx context.Context, r *http.Request) (*model.Order, error) {
+func (ou *OrderUseCase) CreateOrder(ctx context.Context, request model.NewOrderDTO) (*model.Order, error) {
 
-	var request model.NewOrderDTO
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return &model.Order{}, err
-	}
 	//getting uuid string from token and parsing to UUID
 	customerID := middleware.GetUserIDFromToken(ctx)
 	parsedCustomerID, err := uuid.Parse(customerID)
@@ -64,26 +56,26 @@ func (ou *OrderUseCase) CreateOrder(ctx context.Context, r *http.Request) (*mode
 
 }
 
-func (ou *OrderUseCase) GetOrders(ctx context.Context, r *http.Request) (*[]model.Order, error) {
-	limit, offset := extractLimitAndOffset(r)
+func (ou *OrderUseCase) GetOrders(ctx context.Context, limit int, offset int) (*[]model.Order, error) {
+
 	customerID := middleware.GetUserIDFromToken(ctx)
 
 	return ou.orderRepository.GetOrders(ctx, limit, offset, customerID)
 
 }
 
-func (ou *OrderUseCase) GetOrderByID(ctx context.Context, r *http.Request) (*model.Order, error) {
-	orderId := chi.URLParam(r, "order_id")
+func (ou *OrderUseCase) GetOrderByID(ctx context.Context, orderID string) (*model.Order, error) {
+
 	customerID := middleware.GetUserIDFromToken(ctx) //user autenticado
 	if customerID == "" {
 		return nil, model.ErrAuthorizationFailed
 	}
 
-	if err := uuid.Validate(orderId); err != nil {
+	if err := uuid.Validate(orderID); err != nil {
 		return nil, err
 	}
 
-	order, err := ou.orderRepository.GetOrderByID(ctx, orderId, customerID)
+	order, err := ou.orderRepository.GetOrderByID(ctx, orderID, customerID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, model.ErrOrderNotFound
@@ -96,27 +88,8 @@ func (ou *OrderUseCase) GetOrderByID(ctx context.Context, r *http.Request) (*mod
 	return order, nil
 }
 
-func extractLimitAndOffset(r *http.Request) (int, int) {
-	urlParams := r.URL.Query()
-	offsetStr, limitStr := urlParams.Get("offset"), urlParams.Get("limit")
-	offset, limit := 0, 10 //valores default
+func (ou *OrderUseCase) PayOrder(ctx context.Context, orderID string) error {
 
-	if offsetStr != "" {
-		if parsedOffset, err := strconv.Atoi(offsetStr); err == nil {
-			offset = parsedOffset
-		}
-	}
-	if limitStr != "" {
-		if parsedLimit, err := strconv.Atoi(limitStr); err == nil {
-			limit = parsedLimit
-		}
-	}
-
-	return limit, offset
-}
-
-func (ou *OrderUseCase) PayOrder(ctx context.Context, r *http.Request) error {
-	orderID := chi.URLParam(r, "order_id")
 	customerID := middleware.GetUserIDFromToken(ctx)
 
 	order, err := ou.orderRepository.GetOrderByID(ctx, orderID, customerID)
@@ -134,8 +107,7 @@ func (ou *OrderUseCase) PayOrder(ctx context.Context, r *http.Request) error {
 	return err
 }
 
-func (ou *OrderUseCase) CancelOrder(ctx context.Context, r *http.Request) error {
-	orderID := chi.URLParam(r, "order_id")
+func (ou *OrderUseCase) CancelOrder(ctx context.Context, orderID string) error {
 	customerID := middleware.GetUserIDFromToken(ctx)
 	order, err := ou.orderRepository.GetOrderByID(ctx, orderID, customerID)
 	if err != nil {

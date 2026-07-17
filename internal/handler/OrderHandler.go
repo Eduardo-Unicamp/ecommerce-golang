@@ -2,20 +2,23 @@ package handler
 
 import (
 	"context"
+	"strconv"
 
 	"encoding/json"
 
 	"first-api/internal/model"
 
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type OrderUseCase interface {
-	CreateOrder(ctx context.Context, r *http.Request) (*model.Order, error)
-	GetOrders(ctx context.Context, r *http.Request) (*[]model.Order, error)
-	GetOrderByID(ctx context.Context, r *http.Request) (*model.Order, error)
-	PayOrder(ctx context.Context, r *http.Request) error
-	CancelOrder(ctx context.Context, r *http.Request) error
+	CreateOrder(ctx context.Context, request model.NewOrderDTO) (*model.Order, error)
+	GetOrders(ctx context.Context, limit int, offset int) (*[]model.Order, error)
+	GetOrderByID(ctx context.Context, orderID string) (*model.Order, error)
+	PayOrder(ctx context.Context, orderID string) error
+	CancelOrder(ctx context.Context, orderID string) error
 }
 
 type OrderHandler struct {
@@ -28,7 +31,14 @@ func NewOrderHandler(orderUseCase OrderUseCase) *OrderHandler {
 
 func (oh *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	order, err := oh.UseCase.CreateOrder(ctx, r)
+
+	//parte request to a dto
+	var request model.NewOrderDTO
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		WriteOrderError(w, err)
+	}
+	//
+	order, err := oh.UseCase.CreateOrder(ctx, request)
 	if err != nil {
 		WriteOrderError(w, err)
 		return
@@ -42,7 +52,8 @@ func (oh *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 
 func (oh *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	orders, err := oh.UseCase.GetOrders(ctx, r)
+	limit, offset := extractLimitAndOffset(r)
+	orders, err := oh.UseCase.GetOrders(ctx, limit, offset)
 	if err != nil {
 		WriteOrderError(w, err)
 		return
@@ -53,9 +64,29 @@ func (oh *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func extractLimitAndOffset(r *http.Request) (int, int) {
+	urlParams := r.URL.Query()
+	offsetStr, limitStr := urlParams.Get("offset"), urlParams.Get("limit")
+	offset, limit := 0, 10 //valores default
+
+	if offsetStr != "" {
+		if parsedOffset, err := strconv.Atoi(offsetStr); err == nil {
+			offset = parsedOffset
+		}
+	}
+	if limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil {
+			limit = parsedLimit
+		}
+	}
+
+	return limit, offset
+}
+
 func (oh *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	order, err := oh.UseCase.GetOrderByID(ctx, r)
+	orderID := chi.URLParam(r, "order_id")
+	order, err := oh.UseCase.GetOrderByID(ctx, orderID)
 	if err != nil {
 		WriteOrderError(w, err)
 		return
@@ -68,7 +99,9 @@ func (oh *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request) {
 
 func (oh *OrderHandler) PayOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	if err := oh.UseCase.PayOrder(ctx, r); err != nil {
+	orderID := chi.URLParam(r, "order_id")
+
+	if err := oh.UseCase.PayOrder(ctx, orderID); err != nil {
 		WriteOrderError(w, err)
 		return
 	}
@@ -79,7 +112,9 @@ func (oh *OrderHandler) PayOrder(w http.ResponseWriter, r *http.Request) {
 
 func (oh *OrderHandler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	if err := oh.UseCase.CancelOrder(ctx, r); err != nil {
+	orderID := chi.URLParam(r, "order_id")
+
+	if err := oh.UseCase.CancelOrder(ctx, orderID); err != nil {
 		WriteOrderError(w, err)
 		return
 	}

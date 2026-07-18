@@ -6,15 +6,13 @@ import (
 	"errors"
 	"first-api/internal/model"
 	"fmt"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type CustomerRepository struct {
-	connection *pgxpool.Pool
+	connection ConnectionPool
 }
 
-func NewCustomerRepository(connection *pgxpool.Pool) *CustomerRepository {
+func NewCustomerRepository(connection ConnectionPool) *CustomerRepository {
 	return &CustomerRepository{
 		connection: connection,
 	}

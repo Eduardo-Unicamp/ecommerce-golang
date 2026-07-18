@@ -6,15 +6,14 @@ import (
 	"first-api/internal/model"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 )
 
 type ProductRepository struct {
-	connection *pgxpool.Pool
+	connection ConnectionPool
 }
 
-func NewProductRepository(connection *pgxpool.Pool) *ProductRepository {
+func NewProductRepository(connection ConnectionPool) *ProductRepository {
 	return &ProductRepository{
 		connection: connection,
 	}

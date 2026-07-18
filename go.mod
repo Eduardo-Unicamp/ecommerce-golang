@@ -22,6 +22,7 @@ require (
 	github.com/gorilla/mux v1.6.2 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/pashagolub/pgxmock/v3 v3.4.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

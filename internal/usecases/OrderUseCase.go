@@ -64,9 +64,8 @@ func (ou *OrderUseCase) GetOrders(ctx context.Context, limit int, offset int) (*
 
 }
 
-func (ou *OrderUseCase) GetOrderByID(ctx context.Context, orderID string) (*model.Order, error) {
+func (ou *OrderUseCase) GetOrderByID(ctx context.Context, orderID string, customerID string) (*model.Order, error) {
 
-	customerID := middleware.GetUserIDFromToken(ctx) //user autenticado
 	if customerID == "" {
 		return nil, model.ErrAuthorizationFailed
 	}

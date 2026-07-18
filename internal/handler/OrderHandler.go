@@ -6,6 +6,7 @@ import (
 
 	"encoding/json"
 
+	"first-api/internal/middleware"
 	"first-api/internal/model"
 
 	"net/http"
@@ -16,7 +17,7 @@ import (
 type OrderUseCase interface {
 	CreateOrder(ctx context.Context, request model.NewOrderDTO) (*model.Order, error)
 	GetOrders(ctx context.Context, limit int, offset int) (*[]model.Order, error)
-	GetOrderByID(ctx context.Context, orderID string) (*model.Order, error)
+	GetOrderByID(ctx context.Context, orderID string, customerID string) (*model.Order, error)
 	PayOrder(ctx context.Context, orderID string) error
 	CancelOrder(ctx context.Context, orderID string) error
 }
@@ -86,7 +87,8 @@ func extractLimitAndOffset(r *http.Request) (int, int) {
 func (oh *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	orderID := chi.URLParam(r, "order_id")
-	order, err := oh.UseCase.GetOrderByID(ctx, orderID)
+	customerID := middleware.GetUserIDFromToken(ctx) //user autenticado
+	order, err := oh.UseCase.GetOrderByID(ctx, orderID, customerID)
 	if err != nil {
 		WriteOrderError(w, err)
 		return

@@ -58,3 +58,25 @@ func (os *OrderStatus) Scan(src any) error {
 func (os OrderStatus) MarshalJSON() ([]byte, error) {
 	return json.Marshal(os.String())
 }
+
+// Só precisou pra funcionar no teste
+func (os *OrderStatus) UnmarshalJSON(data []byte) error {
+	var statusStr string
+
+	if err := json.Unmarshal(data, &statusStr); err != nil {
+		return err
+	}
+
+	switch statusStr {
+	case "PENDING":
+		*os = PENDING
+	case "PAID":
+		*os = PAID
+	case "CANCELED", "CANCELLED":
+		*os = CANCELED
+	default:
+		*os = Unspecified
+	}
+
+	return nil
+}

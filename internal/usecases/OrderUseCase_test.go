@@ -5,11 +5,8 @@ import (
 	"database/sql"
 	"first-api/internal/mocks"
 	"first-api/internal/model"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -51,7 +48,7 @@ func TestGetOrderByID(t *testing.T) {
 			name: "SUCCESS Id válido, retorna order",
 			id:   validUUID.String(),
 			setupMocks: func() {
-				mockOrderRepository.EXPECT().GetOrderByID(gomock.Any(), "019f5936-935b-7e2a-985e-468106c73243").
+				mockOrderRepository.EXPECT().GetOrderByID(gomock.Any(), "019f5936-935b-7e2a-985e-468106c73243", "019f5936-935b-7e2a-985e-468106c73243").
 					Return(&testOrder, nil).Times(1)
 			},
 			expectedResult: &testOrder,
@@ -62,13 +59,15 @@ func TestGetOrderByID(t *testing.T) {
 			id:             invalidUUID,
 			setupMocks:     func() {},
 			expectedResult: nil,
-			expectedError:  model.InvalidIDFormat,
+			expectedError:  model.ErrInvalidIDFormat,
 		},
 		{
 			name: "Id em formato válido, mas order inexistente",
 			id:   "019f5936-935b-7e2a-985e-468106c73243", //not in the database
 			setupMocks: func() {
-				mockOrderRepository.EXPECT().GetOrderByID(gomock.Any(), "019f5936-935b-7e2a-985e-468106c73243").Return(nil, sql.ErrNoRows).Times(1)
+				mockOrderRepository.EXPECT().GetOrderByID(gomock.Any(), "019f5936-935b-7e2a-985e-468106c73243", "019f5936-935b-7e2a-985e-468106c73243").
+					Return(nil, sql.ErrNoRows).
+					Times(1)
 			},
 			expectedResult: nil,
 			expectedError:  model.ErrOrderNotFound,
@@ -80,13 +79,10 @@ func TestGetOrderByID(t *testing.T) {
 			//Arrange
 			tt.setupMocks()
 
-			ctx := chi.NewRouteContext()
-			ctx.URLParams.Add("order_id", tt.id)
-			r := httptest.NewRequest(http.MethodGet, "/order/{order_id}", nil)
-			r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, ctx))
-
+			orderID := tt.id
+			customerID := tt.id
 			//Act
-			order, err := orderUseCase.GetOrderByID(context.Background(), r)
+			order, err := orderUseCase.GetOrderByID(context.Background(), orderID, customerID)
 
 			//Assert
 			assert.Equal(t, tt.expectedResult, order, "")

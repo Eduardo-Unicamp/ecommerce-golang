@@ -5,14 +5,22 @@ import (
 	"first-api/internal/model"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
-type OrderRepository struct {
-	connection *pgxpool.Pool
+type ConnectionPool interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (commandTag pgconn.CommandTag, err error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
-func NewOrderRepository(connection *pgxpool.Pool) *OrderRepository {
+type OrderRepository struct {
+	connection ConnectionPool
+}
+
+func NewOrderRepository(connection ConnectionPool) *OrderRepository {
 	return &OrderRepository{connection: connection}
 }
 
